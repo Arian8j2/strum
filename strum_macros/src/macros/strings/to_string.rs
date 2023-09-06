@@ -1,6 +1,6 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Data, DeriveInput, Fields};
+use syn::{punctuated::Punctuated, Data, DeriveInput, Fields, Token};
 
 use crate::helpers::{non_enum_error, HasStrumVariantProperties, HasTypeProperties};
 
@@ -41,13 +41,27 @@ pub fn to_string_inner(ast: &DeriveInput) -> syn::Result<TokenStream> {
         // Look at all the serialize attributes.
         let output = variant_properties.get_preferred_name(type_properties.case_style);
 
-        let params = match variant.fields {
+        let params = match &variant.fields {
             Fields::Unit => quote! {},
             Fields::Unnamed(..) => quote! { (..) },
-            Fields::Named(..) => quote! { {..} },
+            Fields::Named(field_names) => {
+                let names: Punctuated<&Ident, Token!(,)> = field_names
+                    .named
+                    .iter()
+                    .map(|field| field.ident.as_ref().unwrap())
+                    .collect();
+                quote! { {#names} }
+            }
         };
 
-        arms.push(quote! { #name::#ident #params => ::std::string::String::from(#output) });
+        let arm = match variant.fields {
+            Fields::Named(_) => quote! {
+                #[allow(unused_variables)]
+                #name::#ident #params => format!(#output)
+            },
+            _ => quote! { #name::#ident #params => ::std::string::String::from(#output) },
+        };
+        arms.push(arm);
     }
 
     if arms.len() < variants.len() {
