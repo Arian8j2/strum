@@ -267,6 +267,10 @@ pub fn into_static_str(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
 ///     Green {
 ///         range: usize,
 ///     },
+///     #[strum(to_string = "purple with {sat} saturation")]
+///     Purple {
+///         sat: usize,
+///     },
 ///     Blue(usize),
 ///     Yellow,
 /// }
@@ -277,6 +281,9 @@ pub fn into_static_str(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
 /// // by default the variants Name
 /// let yellow = Color::Yellow;
 /// assert_eq!(String::from("Yellow"), yellow.to_string());
+///
+/// let purple = Color::Purple { sat: 10 };
+/// assert_eq!(String::from("purple with 10 saturation"), purple.to_string());
 /// ```
 #[deprecated(
     since = "0.22.0",
